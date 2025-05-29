@@ -43,12 +43,18 @@ In **LaserDuels-2**, your goal is to **survive for 2 minutes** without losing al
 Unzip the file and open your terminal, then navigate to the folder:
 1. Download the code from GitHub.
 2. Unzip the file and open your terminal, then navigate to the folder:
-| cd /path/to/this/file |
+```
+ cd /path/to/this/file
+```
 4. Make sure you have Java Development Kit (JDK) and Java Runtime Environment (JRE) installed.
 5. Compile the Java files:
-|javac *java|
+```
+javac *.java
+```
 8. Run the program::
-|java GameFrame|
+```
+java GameFrame
+```
 
 ---
 
