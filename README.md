@@ -47,13 +47,15 @@ In **LaserDuels-2**, your goal is to **survive for 2 minutes** without losing al
 
 ---
 
-## Game Screenshot
+## Game Screenshots
 
 Here are screenshots of the game in action.
 
 ![LaserDuels Gameplay](images/ss1.png)
+---
 ![LaserDuels Gameplay](images/ss2.png)
+---
 ![LaserDuels Gameplay](images/ss3.png)
+---
 ![LaserDuels Gameplay](images/ss4.png)
-
-
+---
