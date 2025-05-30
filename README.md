@@ -14,13 +14,28 @@ In **LaserDuels-2**, your goal is to **survive for 2 minutes** without losing al
 
 ---
 
+## What's New (May 2025 Update)
+
+- **Lava rises** after 50 seconds — be ready to move fast or be consumed!
+- **Flying mobs** now appear:
+  - They **attack you** for **20 HP**
+  - Their attacks apply **status effects**: weak jump and slowed movement
+- **Lava dragon** emerges:
+  - It deals a massive **100 damage**
+  - It appears from the lava and **weakens you**
+
+ ---
+
 ## How to Win
 
 - Survive **2 minutes** without your HP dropping to zero.
-- Avoid fireballs and lava:
+- Avoid all hazards:
   - **Fireball hit:** -10 HP
+  - **Flying mob hit:** -20 HP + debuffs (weaker jump, slower speed)
   - **Lava hit:** -50 HP
-- You can **punch fireballs** by clicking on them within your range to destroy them and prevent damage.
+  - **Dragon hit:** -100 HP + weakened state
+- **Punch fireballs** by clicking on them within your range to destroy them and prevent damage.
+- **Punch flying mob** by clicking on them 3 times (three taps to kill).
 
 ---
 
@@ -72,11 +87,11 @@ java GameFrame
 
 Here are screenshots of the game in action.
 
-![LaserDuels Gameplay](images/ss1.png)
+![LaserDuels Gameplay](images/gameplay.gif)
 ---
-![LaserDuels Gameplay](images/ss2.png)
+![LaserDuels Gameplay](images/ssv2-1.png)
 ---
-![LaserDuels Gameplay](images/ss3.png)
+![LaserDuels Gameplay](images/ssv2-2.png)
 ---
-![LaserDuels Gameplay](images/ss4.png)
+![LaserDuels Gameplay](images/ssv2-3.png)
 ---
