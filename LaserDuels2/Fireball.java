@@ -11,17 +11,33 @@ public class Fireball {
     public boolean fromLeft;
     private final Image image;
     private int clickCount = 0;
+    private long creationTime;
+    private boolean speedIncreased = false;
 
     public Fireball(int screenHeight, boolean fromLeft, Image image) {
         this.fromLeft = fromLeft;
         this.image = image;
         this.y = 100 + new Random().nextInt(screenHeight - 200);
-        this.vx = fromLeft ? 4 : -4;
+
+        Random rand = new Random();
+        int speed = 2 + rand.nextInt(2);
+        this.vx = fromLeft ? speed : -speed;
         this.x = fromLeft ? -width : 800;
+        this.creationTime = System.currentTimeMillis();
     }
 
     public void update() {
         x += vx;
+        long elapsedTime = System.currentTimeMillis() - creationTime;
+
+        if (!speedIncreased && elapsedTime >= 50000) {  // 50,000 ms = 50 seconds
+            if (vx > 0) {
+                vx += 1;
+            } else {
+                vx -= 1;
+            }
+            speedIncreased = true;  // only increase speed once after 50 seconds
+        }
     }
 
     public Rectangle getBounds() {

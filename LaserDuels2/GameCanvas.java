@@ -1,6 +1,7 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import javax.swing.*;
@@ -29,15 +30,18 @@ public class GameCanvas extends JPanel implements ActionListener, KeyListener {
     private boolean lavaVisible = false;
     private long gameStartTime = System.currentTimeMillis();
     private final int lavaDelay = 10000;
+    private int lavaHeight = 50;
 
     private boolean countdownStarted = false;
     private long countdownStartTime = 0;
     private final int countdownDuration = 10000; 
 
     private boolean showStartOverlay = true;
+
     private boolean lavaSpawned = false;
     private long lavaSpawnedStartTime = 0;
     private final int lavaSpawnedAnimationDuration = 1200; 
+
     private boolean showPlayer1Text = false;
 
     private final List<Fireball> fireballs = new ArrayList<>();
@@ -54,8 +58,17 @@ public class GameCanvas extends JPanel implements ActionListener, KeyListener {
     private boolean showHitEffect = false;
     private long hitEffectStartTime = 0;
     private final int hitEffectDuration = 1500; 
-    
 
+    private ArrayList<Enemy> enemies = new ArrayList<>();
+    private long lastSpawnTime = 0;
+    private int maxEnemies = 7;
+    private int enemySpawnInterval = 4000;
+
+    private List<Dragon> dragons = new ArrayList<>();
+    private long lastDragonSpawnTime = 0;
+    private int DRAGON_SPAWN_INTERVAL = 7000; 
+    private static final long BOSS_WAVE_TIME = 50_000;
+    
     public GameCanvas() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setBackground(Color.BLACK);
@@ -120,6 +133,15 @@ public class GameCanvas extends JPanel implements ActionListener, KeyListener {
             punching = false;
         }
 
+       if (punching) {
+            for (Enemy enemy : enemies) {
+                if (player.canPunch(enemy.getX(), enemy.getY())) {
+                    enemy.takeDamage();
+                    break; 
+                }
+            }
+        }
+
         if (!player.isFastFalling()) {
             for (Platform platform : platforms) {
                 if (platform.isUnderPlayer(player)) {
@@ -128,7 +150,41 @@ public class GameCanvas extends JPanel implements ActionListener, KeyListener {
                 }
             }
         }
-        long currentTime = System.currentTimeMillis();
+        long currentTime = System.currentTimeMillis();  
+        long elapsedTime = currentTime - gameStartTime;
+
+        if (elapsedTime > BOSS_WAVE_TIME) {
+            enemySpawnInterval = 2000;  
+            maxEnemies = 14;           
+        }
+
+        if (currentTime - lastSpawnTime > enemySpawnInterval && enemies.size() < maxEnemies) {
+            int spawnX = rand.nextBoolean() ? 0 : WIDTH - 40;
+            int spawnY = rand.nextInt(HEIGHT - 100); 
+            enemies.add(new Enemy(spawnX, spawnY));
+            lastSpawnTime = currentTime;
+        }
+
+
+        Iterator<Enemy> enemyIterator = enemies.iterator();
+        while (enemyIterator.hasNext()) {
+            Enemy enemy = enemyIterator.next();
+            enemy.update(player);
+
+            if (enemy.getBounds().intersects(player.getBounds())) {
+                if (player.canTakeDamage()) {
+                    player.takeDamage(20);
+                    player.markDamageTaken();
+                    player.applySlowEffect();
+                    showHitEffect = true;
+                    hitEffectStartTime = System.currentTimeMillis();
+                }
+            }
+
+            if (enemy.isDead()) {
+                enemyIterator.remove();
+            }
+        }
 
         if (!countdownStarted && !lavaSpawned && showPlayer1Text) {
             lavaVisible = true;
@@ -136,7 +192,15 @@ public class GameCanvas extends JPanel implements ActionListener, KeyListener {
             lavaVisible = false;
         }
 
-        if (lavaVisible && player.getY() + player.getSize() >= HEIGHT - 50) {
+        long timeSinceGameStart = System.currentTimeMillis() - gameStartTime;
+        int collisionBuffer;
+        if (timeSinceGameStart < BOSS_WAVE_TIME) {
+            collisionBuffer = 20; 
+        } else {
+            collisionBuffer = 20 + (int)(((timeSinceGameStart - BOSS_WAVE_TIME) / 1000f) * 2);
+        }
+
+        if (lavaVisible && player.getY() + player.getSize() >= HEIGHT - lavaHeight + collisionBuffer) {
             player.respawn(100, 100);
             player.takeDamage(50);
 
@@ -146,9 +210,7 @@ public class GameCanvas extends JPanel implements ActionListener, KeyListener {
             }
                     
         }
-        long elapsedTime = currentTime - gameStartTime;
-
-        int interval = elapsedTime > 50_000 ? 4000 : platformRefreshInterval;  // 4s after 50s
+        int interval = elapsedTime > BOSS_WAVE_TIME ? 4000 : platformRefreshInterval;  // 4s after 50s
 
         if (currentTime - lastPlatformRefreshTime > interval) {
             generatePlatforms();
@@ -197,6 +259,36 @@ public class GameCanvas extends JPanel implements ActionListener, KeyListener {
             }
         }
 
+         // === DRAGON SPAWNING ===
+        if (currentTime - gameStartTime >= BOSS_WAVE_TIME+4 && currentTime - lastDragonSpawnTime >= DRAGON_SPAWN_INTERVAL) {
+            int numDragonsToSpawn = 1; // 1 to 3 dragons, <= removed feature for now
+            for (int i = 0; i < numDragonsToSpawn; i++) {
+                Dragon dragon = new Dragon(WIDTH, HEIGHT);
+                dragons.add(dragon);
+            }
+            lastDragonSpawnTime = currentTime;
+        } 
+
+        // === DRAGON UPDATING ===
+        Iterator<Dragon> dragonIterator = dragons.iterator();
+        while (dragonIterator.hasNext()) {
+            Dragon dragon = dragonIterator.next();
+            dragon.update(); // updates visibility timer
+
+            if (dragon.getBounds().intersects(player.getBounds())) {
+                if (player.canTakeDamage()) {
+                    player.takeDamage(100);
+                    player.markDamageTaken();
+                    player.applyDragonEffect();
+                }
+            }
+
+            // Remove dragon if no longer visible (after 2 seconds)
+            if (!dragon.isVisible()) {
+                dragonIterator.remove();
+            }
+        }
+
         if (player.isGameOver() && currentTime - player.getGameOverTime() >= gameRestartDelay) {
             restartGame();
         }
@@ -232,6 +324,15 @@ public class GameCanvas extends JPanel implements ActionListener, KeyListener {
         fireballs.clear();
         fireballCount = 3;
         player.respawn(100, HEIGHT - 100);
+
+        enemies.clear();
+        lastSpawnTime = 0;
+        maxEnemies = 7;
+        enemySpawnInterval = 4000;
+
+        lavaHeight = 50;
+        lavaSpawnedStartTime = 0;
+
         generatePlatforms();
         lastPlatformRefreshTime = System.currentTimeMillis();     
         gameTimerStartTime = System.currentTimeMillis(); 
@@ -293,6 +394,10 @@ public class GameCanvas extends JPanel implements ActionListener, KeyListener {
             int sparkY = playerCenterY - sparkSize / 2;
 
             g.drawImage(sparkImage, sparkX, sparkY, sparkSize, sparkSize, this);
+        }
+
+        for (Dragon dragon : dragons) {
+            dragon.draw(g2, this);
         }
 
         long currentTime = System.currentTimeMillis();
@@ -376,14 +481,26 @@ public class GameCanvas extends JPanel implements ActionListener, KeyListener {
             g2.drawString(player1Text, x, y);
         }
 
-    
         if (lavaVisible) {
-            g2.drawImage(lavaImage, 0, HEIGHT - 50, WIDTH, 50, this);
+            long timeSinceGameStart = System.currentTimeMillis() - gameStartTime;
+
+            if (timeSinceGameStart >= BOSS_WAVE_TIME) {
+                int riseTime = (int) ((timeSinceGameStart - BOSS_WAVE_TIME) / 1000f);
+                lavaHeight = riseTime * 10;
+
+                int maxLavaHeight = HEIGHT / 2;
+                if (lavaHeight > maxLavaHeight) {
+                    lavaHeight = maxLavaHeight;
+                }
+            } else {
+                lavaHeight = 50; 
+            }
+            g2.drawImage(lavaImage, 0, HEIGHT - lavaHeight, WIDTH, lavaHeight, this);
         }
 
         int health = player.getHealth();
-        int healthBarWidth = (int) (200 * Math.max(0, health / 500.0));
-        g2.setColor(health > 250 ? Color.GREEN : health > 100 ? Color.ORANGE : Color.RED);
+        int healthBarWidth = (int) (200 * Math.max(0, health / 2000.0)); //divided by max health
+        g2.setColor(health > 1000 ? Color.GREEN : health > 500 ? Color.ORANGE : Color.RED);
         g2.fillRect(20, 20, healthBarWidth, 30);
         g2.setColor(Color.WHITE);
         g2.setFont(pixelFont30.deriveFont(18f));
@@ -437,47 +554,59 @@ public class GameCanvas extends JPanel implements ActionListener, KeyListener {
 
         }
 
+        for (Enemy enemy : enemies) {
+            enemy.draw(g2, this);
+        }
+
         g2.dispose();
     }
+private void generatePlatforms() {
+    platforms.clear();
 
-    private void generatePlatforms() {
-        platforms.clear();
+    long elapsedTime = System.currentTimeMillis() - gameStartTime;
+    boolean lateGame = elapsedTime > BOSS_WAVE_TIME;
 
-        long elapsedTime = System.currentTimeMillis() - gameStartTime;
-        boolean lateGame = elapsedTime > 50_000;
+    int num = lateGame ? 1 + rand.nextInt(4) : 2 + rand.nextInt(5);
+    int attempts = 0;
+    int maxAttempts = 100;
 
-        int num = lateGame ? 1 + rand.nextInt(3) : 2 + rand.nextInt(5);
-        int attempts = 0;
-        int maxAttempts = 100;
+    int minSpacing = lateGame ? 150 : 80;
+    int minWidth = lateGame ? 60 : 100;
+    int maxWidth = lateGame ? 120 : 300;
 
-        int minSpacing = lateGame ? 150 : 80;
-        int minWidth = lateGame ? 60 : 100;
-        int maxWidth = lateGame ? 120 : 300;
-    
-      
-        while (platforms.size() < num && attempts < maxAttempts) {
-            int width = minWidth + rand.nextInt(maxWidth - minWidth + 1);
-            int x = rand.nextInt(WIDTH - width);
-            int y = 100 + rand.nextInt(HEIGHT - 200); 
+    // Adjust max Y to spawn platforms ABOVE the lava after boss wave
+    int maxY = lateGame ? HEIGHT - lavaHeight - 50 : HEIGHT - 200; 
+    // 50px buffer above lava to avoid too close spawns
 
-            boolean tooClose = false;
-            for (Platform existing : platforms) {
-                int dx = Math.abs(existing.x - x);
-                int dy = Math.abs(existing.y - y);
+    // Ensure maxY doesn't get negative or too small
+    if (maxY < 100) maxY = 100;  // minimum spawn height
 
-                if (dx < minSpacing && dy < minSpacing) {
-                    tooClose = true;
-                    break;
-                }
+    while (platforms.size() < num && attempts < maxAttempts) {
+        int width = minWidth + rand.nextInt(maxWidth - minWidth + 1);
+        int x = rand.nextInt(WIDTH - width);
+
+        // Y is now limited by maxY
+        int y = 100 + rand.nextInt(maxY - 100 + 1);
+
+        boolean tooClose = false;
+        for (Platform existing : platforms) {
+            int dx = Math.abs(existing.x - x);
+            int dy = Math.abs(existing.y - y);
+
+            if (dx < minSpacing && dy < minSpacing) {
+                tooClose = true;
+                break;
             }
-
-            if (!tooClose) {
-                platforms.add(new Platform(x, y, width));
-            }
-
-            attempts++;
         }
+
+        if (!tooClose) {
+            platforms.add(new Platform(x, y, width));
+        }
+
+        attempts++;
     }
+}
+
 
     @Override
     public void keyPressed(KeyEvent e) {

@@ -4,7 +4,7 @@ import javax.swing.ImageIcon;
 
 public class Player {
     private int x, y;
-    private int health = 500;
+    private int health = 2000;
     private boolean gameOver = false;
     private long gameOverTime = 0;
 
@@ -26,17 +26,30 @@ public class Player {
     private final long knockbackDuration = 125; 
     private int knockbackDirection = 0;
     private float knockbackSpeed = 0.0f;
-    private final float knockbackAcceleration = 10.0f; 
+    private float knockbackAcceleration = 6.5f; 
+    private final float baseKnockbackAcceleration = 6.5f;
     
     private boolean gameWin = false;
     private long gameWinTime = 0;
 
+    private boolean slowed = false;
+    private long slowedStartTime = 0;
+    private final long slowedDuration = 4000; // 4 seconds
+    private final long damageCooldown = 1500; // 1.5 seconds
+    private long lastDamageTime = 0;
+
+    private long cooldownReductionEndTime = 0;
+    private final long dragonEffectDuration = 5000;
 
 
     private Image idleImage;
     private Image runImage;
     private Image currentImage;
     private Image jumpImage;
+    private Image slowEffectImage = new ImageIcon("evilfx.gif").getImage();
+    private Image dragonEffectImage = new ImageIcon("burn.gif").getImage();
+
+
 
 
     public Player(int startX, int startY) {
@@ -48,20 +61,20 @@ public class Player {
     }
 
     public void moveLeft() {
-        velocityX = -speed;
+        velocityX = -getSpeed();
         facingLeft = true;
         currentImage = runImage;
     }
 
     public void moveRight() {
-        velocityX = speed;
+        velocityX = getSpeed();
         facingLeft = false;
         currentImage = runImage;
     }
 
     public void jump() {
         if (jumpCount < maxJumps) {
-            velocityY = jumpStrength;
+            velocityY = getJumpStrength();
             jumpCount++;
             currentImage = jumpImage;
         }
@@ -103,6 +116,10 @@ public class Player {
         if (x < 0) x = 0;
         if (x + size > 800) x = 800 - size;
         if (y < 0) y = 0;
+
+        if (!isUnderDragonEffect() && knockbackAcceleration != baseKnockbackAcceleration) {
+            knockbackAcceleration = baseKnockbackAcceleration;
+        }
     }
 
 
@@ -188,7 +205,7 @@ public class Player {
 
 
     public void reset() {
-        health = 500;
+        health = 2000;
         gameOver = false;
         gameOverTime = 0;
         currentImage = idleImage;
@@ -221,21 +238,75 @@ public class Player {
         this.gameWin = win;
     }
 
-    public void draw(Graphics g, Component c) {
+    public int getSpeed() {
+        return slowed ? speed - 2 : speed;
+    }
 
+    public double getJumpStrength() {
+        return slowed ? jumpStrength / 2 : jumpStrength;
+    }
+
+    public boolean isSlowed() {
+        if (slowed && System.currentTimeMillis() - slowedStartTime >= slowedDuration) {
+            slowed = false;
+        }
+        return slowed;
+    }
+
+    public void applySlowEffect() {
+        if (!isSlowed()) {
+            slowed = true;
+            slowedStartTime = System.currentTimeMillis();
+        }
+    }
+
+    public boolean canTakeDamage() {
+        long cooldown = isUnderDragonEffect() ? damageCooldown / 3 : damageCooldown;
+        return System.currentTimeMillis() - lastDamageTime >= cooldown;
+    }
+
+    public void markDamageTaken() {
+        lastDamageTime = System.currentTimeMillis();
+    }
+
+    private boolean isUnderDragonEffect() {
+        return System.currentTimeMillis() <= cooldownReductionEndTime;
+    }
+
+    public void applyDragonEffect() {
+   
+        knockbackStartTime = System.currentTimeMillis();
+        knockbackAcceleration = baseKnockbackAcceleration * 1.3f;
+
+        jumpCount = 0;
+
+        cooldownReductionEndTime = System.currentTimeMillis() + dragonEffectDuration;
+    }
+
+    public void draw(Graphics g, Component c) {
         Graphics2D g2d = (Graphics2D) g;
-        double scale = 1.4; 
+        double scale = 1.4;
         AffineTransform original = g2d.getTransform();
 
         if (facingLeft) {
-            g2d.translate(x + size, y);  
-            g2d.scale(-scale, scale);   
+            g2d.translate(x + size, y);
+            g2d.scale(-scale, scale);
         } else {
             g2d.translate(x, y);
             g2d.scale(scale, scale);
         }
 
         g2d.drawImage(currentImage, 0, -8, size, size, c);
+
+        if (isSlowed()) {
+            g2d.drawImage(slowEffectImage, 0, -8, size, size, c);
+        }
+        if (isUnderDragonEffect()) {
+            g2d.drawImage(dragonEffectImage, 0, -8, size, size, c);
+        }
+
         g2d.setTransform(original);
     }
+
+
 }
