@@ -14,18 +14,7 @@ In **LaserDuels-2**, your goal is to **survive for 2 minutes** without losing al
 
 - **Background music** uses Cynthia's theme. Happy flashbacks!
 - **Gameplay:** The platform size dwindles over time while the number of fireballs increases!
-
----
-
-## What's New (May 2025 Update)
-
-- **Lava rises** after 50 seconds — be ready to move fast or be consumed!
-- **Flying mobs** now appear:
-  - They **attack you** for **20 HP**
-  - Their attacks apply **status effects**: weak jump and slowed movement
-- **Lava dragon** emerges:
-  - It deals a massive **100 damage**
-  - It appears from the lava and **weakens you**
+- **Lava rises** after 50 seconds!
 
  ---
 
@@ -33,7 +22,7 @@ In **LaserDuels-2**, your goal is to **survive for 2 minutes** without losing al
 
 - Survive **2 minutes** without your HP dropping to zero.
 - Avoid all hazards:
-  - **Fireball hit:** -10 HP
+  - **Fireball hit:** -10 HP + knockback
   - **Flying mob hit:** -20 HP + debuffs (weaker jump, slower speed)
   - **Lava hit:** -50 HP
   - **Dragon hit:** -100 HP + weakened state
