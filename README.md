@@ -1,5 +1,8 @@
 # LaserDuels-2-Java-Game-Single-Player
 
+![LaserDuels Gameplay](images/gameplay.gif)
+---
+
 A fun little recreation of my old LaserDuels project, redesigned and improved for solo play.
 
 ---
@@ -87,8 +90,6 @@ java GameFrame
 
 Here are screenshots of the game in action.
 
-![LaserDuels Gameplay](images/gameplay.gif)
----
 ![LaserDuels Gameplay](images/ssv2-1.png)
 ---
 ![LaserDuels Gameplay](images/ssv2-2.png)
