@@ -176,6 +176,8 @@ public class Player {
     }
 
     public void takeDamage(int dmg) {
+        if (isGameWin()) return;
+
         health -= dmg;
         if (health < 0) {
             health = 0;
